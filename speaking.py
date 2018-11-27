@@ -82,8 +82,7 @@ def command(cmd):
 	
 
 def waitForCall():
-	os.system('color')
-	#print(chr(27) + "[2J")
+	os.system('color')#default color
 	while(True):
 		try:
 			with sr.Microphone(device_index=1, chunk_size=4096) as source:
@@ -117,4 +116,5 @@ def end():
 
 if __name__ == "__main__":
 	os.system('cls')
+	print("Welcome to Julia personal assistent!")
 	waitForCall()
