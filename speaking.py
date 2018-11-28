@@ -31,12 +31,6 @@ def say(toSay):
 		except:
 			raise
 
-#Custom function
-def printMicrophones():
-	for index, name in enumerate(sr.Microphone.list_microphone_names()):
-		print("Microphone with name \"{1}\" found for `Microphone(device_index={0})`".format(index, name))
-
-
 #Set up speach recognition
 recogniser = sr.Recognizer()
 recogniser.pause_threshold = 0.8
@@ -65,24 +59,7 @@ def recognise(audio):
 	except sr.RequestError as e:
 		print("Could not request results from Google Speech Recognition service; {0}".format(e))
 
-
-#Set up command, wait for prompt...
-def command(cmd):
-	if cmd == None:
-		raise UnrecognisableSoundException()
-	cmd = cmd.lower();
-	if "good bye" in cmd:
-		end();
-
-	if "play" in cmd:
-		talk("Playing music")
-	elif "print the microphones" in cmd:
-		talk("Those are the microphones")
-		printMicrophones()
-	
-
 def waitForCall():
-	os.system('color')#default color
 	while(True):
 		try:
 			with sr.Microphone(device_index=1, chunk_size=4096) as source:
@@ -90,23 +67,28 @@ def waitForCall():
 				audio = recogniser.listen(source, timeout=10)
 			txt = recognise(audio).lower()
 			if "julia" in txt or "julie" in txt:
+				os.system('color 70') #Listeninig
 				say("greet greet_q")
 				break
 		except KeyboardInterrupt:
 			end();
 		except:
 			pass
-
-	os.system('color 70')
 	while(True):
 		try:
-			command(listen(10))
-			break
-		except UnrecognisableSoundException as use: #Poskusi seenkrat
+			return listen(10)
+		except UnrecognisableSoundException as use: #Poskusi seenkrat, ce ne prepozna
 			pass
+	return waitForCall()
 
-	os.system('color')
+	
 	waitForCall()
+
+def noticeWaitCall():
+	os.system('color 07')#default color
+	ret = waitForCall()
+	os.system('color 07')
+	return ret
 
 def end():
 	say("end")
@@ -115,6 +97,4 @@ def end():
 
 
 if __name__ == "__main__":
-	os.system('cls')
-	print("Welcome to Julia personal assistent!")
 	waitForCall()
