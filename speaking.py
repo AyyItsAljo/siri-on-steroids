@@ -66,7 +66,7 @@ def waitForCall():
 				recogniser.adjust_for_ambient_noise(source, duration=0.5)
 				audio = recogniser.listen(source, timeout=10)
 			txt = recognise(audio).lower()
-			if "julia" in txt or "julie" in txt:
+			if "siri" in txt:
 				os.system('color 70') #Listeninig
 				say("greet greet_q")
 				break

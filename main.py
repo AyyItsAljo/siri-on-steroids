@@ -1,4 +1,5 @@
 from speaking import *
+import music_player
 
 #Custom function
 def printMicrophones():
@@ -10,18 +11,19 @@ def myCommand(cmd):
 	if cmd == None:
 		raise UnrecognisableSoundException()
 	cmd = cmd.lower();
-	if "good bye" in cmd:
+	if "goodbye" in cmd:
 		end();
 
 	if "play music" in cmd:
-		talk("Playing music")
+		music_player.play()
+
 	elif "list the microphones" in cmd:
 		talk("Those are the microphones")
 		printMicrophones()
 
 if __name__ == "__main__":
 	os.system('cls')
-	print("Welcome to Julia personal assistent!")
+	print("Welcome to Siri personal assistent!")
 	while True:
 		command = noticeWaitCall()
 		myCommand(command)
