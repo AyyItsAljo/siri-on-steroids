@@ -143,7 +143,7 @@ def prettyPrintChanges(specials_include=True, save_to_file=[True, False], log=Fa
 
 	ret_ = "%s:\n"%base
 	for t in ret_obj["specials"]:
-		cur_sub = ret_obj["timetable"][str(t)]
+		cur_sub = ret_obj["timetable"][t[0]]
 		ret_ += "\t%s %s"%(cur_sub["time_print"], cur_sub["subject_abbr"])
 	return ret_+"\n"
 
