@@ -32,7 +32,7 @@ MANIFEST
 *.spec
 
 #programs temp folder
-temp/*
+temp/
 
 
 # Installer logs
