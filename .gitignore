@@ -34,6 +34,9 @@ MANIFEST
 #programs temp folder
 temp/*
 
+#keep only the folder
+!temp/.gitkeep
+
 
 # Installer logs
 pip-log.txt
