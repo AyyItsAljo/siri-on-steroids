@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import requests, time, datetime, pytz, json
 from datetime import timezone
 from bs4 import BeautifulSoup
@@ -77,11 +79,17 @@ def getData(specials=True, log=False, full=False, week=getCurrentSchoolWeek()):
 				"prof":"N/A",
 				"place":"N/A"
 			}
-			print(current_subject.getText() is "")
+
 			#(datetime of subject[datetime], name[String])
 			tuple_of_subject_time = (dnevi[col_num][0] + day_time_tuple[0], dnevi[col_num][1] + ", " +day_time_tuple[1])
-			print(tuple_of_subject_time)
+			#print(tuple_of_subject_time)
 
+			subject_data["time"] = extractTimestamp(tuple_of_subject_time[0])
+			subject_data["time_print"] = tuple_of_subject_time[1]
+
+			if(current_subject.getText()=="\n"):
+				#Lunch time
+				continue
 			subject_parse, prof_place = current_subject.find("div").findChildren(True , recursive=False)
 
 			grpL_name_spec = subject_parse.find("tr").findChildren("td", recursive=False)
@@ -93,8 +101,6 @@ def getData(specials=True, log=False, full=False, week=getCurrentSchoolWeek()):
 			subject_data["subject"] = subject_name.find("span")["title"]
 			subject_data["subject_abbr"] = subject_name.getText()
 			subject_data["prof"], subject_data["place"] = prof_place.getText().strip().split(", ")
-			subject_data["time"] = extractTimestamp(tuple_of_subject_time[0])
-			subject_data["time_print"] = tuple_of_subject_time[1]
 			print(json.dumps(subject_data, indent=4))
 			#urnik[tuple_of_subject_time[0]]
 			break
