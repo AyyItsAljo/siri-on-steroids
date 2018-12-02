@@ -2,10 +2,8 @@ import speech_recognition as sr
 import os, webbrowser, smtplib
 import pyttsx3
 import pyaudio, random, json
+from phrases import interactions as phrases
 
-#Load Phrases
-with open("phrases.json", "r") as read_file:
-	phrases = json.load(read_file)
 
 #My classes
 class UnrecognisableSoundException (Exception):

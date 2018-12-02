@@ -3,8 +3,9 @@ import music_player
 
 #Custom function
 def printMicrophones():
+	ret = ""
 	for index, name in enumerate(sr.Microphone.list_microphone_names()):
-		print("Microphone with name \"{1}\" found for `Microphone(device_index={0})`".format(index, name))
+		ret+=print("Microphone with name \"{1}\" found for `Microphone(device_index={0})`\n".format(index, name))
 
 #Set up command, wait for prompt...
 def myCommand(cmd):
@@ -22,6 +23,12 @@ def myCommand(cmd):
 		printMicrophones()
 
 if __name__ == "__main__":
+	try:
+		mics = printMicrophones();
+		print(mics)
+	except Exception as e:
+		print(e)
+		exit()
 	os.system('cls')
 	print("Welcome to Siri personal assistent!")
 	while True:
