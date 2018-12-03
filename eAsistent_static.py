@@ -135,4 +135,6 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 
 
 if __name__ == "__main__":
-	print(prettyPrintChanges(save_to_file=[True, True], log=True))
+
+	from eAsistent_formater import prettyPrintChanges
+	print(prettyPrintChanges(save_to_file=[True, True], log=True, week=[3, 2018]))
