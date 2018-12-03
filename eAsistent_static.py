@@ -28,7 +28,10 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 		"year":week[1],
 		"timetable":"N/V",
 		"specials":"N/V",
-		"sent_form":"N/V",
+		"post_data":{
+			"url":"N/V",
+			"form":"N/V"
+		},
 		"error":None
 	}
 	try:
@@ -52,7 +55,9 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 		if save_to_file[0]:
 			with open("temp/last_eAsistent_static.html", "wb") as wf:
 				wf.write(post_data.content)
-
+		
+		if len(str(post_data.content)) < 800 or not "200" in str(post_data):
+			raise Exception(post_data, post_data.content)
 
 		#handling the table
 		dnevi = []
@@ -70,7 +75,6 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 			dnevi.append((day_date, day_name))
 			
 		for row_index, current_row in enumerate(main_table.findChildren("tr", recursive=False)[1:]):
-			urnik[1] = []
 			cells = current_row.findChildren("td", recursive=False)
 			time_offset = abs(datetime.datetime.strptime(cells[0].find_all("div")[1].getText().split(" - ")[0], '%H:%M') - datetime.datetime(1900, 1, 1, 0, 0, 0, 0))
 			#(time of the day[time_delta], name[String])
@@ -124,7 +128,8 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 	else:
 		ret_object["timetable"] = urnik
 		ret_object["specials"] = posebnosti
-		ret_object["sent_form"] = form
+		ret_object["post_data"]["url"] = url
+		ret_object["post_data"]["form"] = form
 		if save_to_file[1]:
 			with open("temp/last_eAsistent_static.json", "w") as wf:
 				json.dump(ret_object, wf, indent=4)
@@ -132,9 +137,3 @@ def getData(specials_include=True, save_to_file=[True, False], log=False, full=F
 	if log:
 		print(json.dumps(ret_object, indent=4))
 	return ret_object
-
-
-if __name__ == "__main__":
-
-	from eAsistent_formater import prettyPrintChanges
-	print(prettyPrintChanges(save_to_file=[True, True], log=True, week=[3, 2018]))

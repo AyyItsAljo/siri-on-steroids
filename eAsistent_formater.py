@@ -13,3 +13,6 @@ def prettyPrintChanges(specials_include=True, save_to_file=[True, False], log=Fa
 		cur_sub = ret_obj["timetable"][t[0]]
 		ret_ += "\t%s %s\n"%(cur_sub["time_print"], cur_sub["subject_abbr"])
 	return ret_+"\n"
+
+if __name__ == "__main__":
+	print(prettyPrintChanges(save_to_file=[True, True], log=True))
