@@ -5,12 +5,13 @@ from oauth2client import file, client, tools
 import datetime, pytz
 import pprint, json, re
 pprint = pprint.PrettyPrinter(indent = 4).pprint
+
 #try:
 #	import argparse
 #	flags = argparse.ArgumentParser(parents = [tools.argparser]).parse_args()
 #except ImportError:
 #	flags = None
-#API_KEY = "AIzaSyAjxffd8zit-jzz88oy2vWwshtmj2fPH0s"
+
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 CLIENT_SECRET = 'private/client_secret.json'
 store = file.Storage('private/storage.json')
