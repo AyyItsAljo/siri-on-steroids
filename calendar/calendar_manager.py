@@ -6,11 +6,11 @@ import datetime, pytz
 import pprint, json, re
 pprint = pprint.PrettyPrinter(indent = 4).pprint
 
-#try:
-#	import argparse
-#	flags = argparse.ArgumentParser(parents = [tools.argparser]).parse_args()
-#except ImportError:
-#	flags = None
+# try:
+# 	import argparse
+# 	flags = argparse.ArgumentParser(parents = [tools.argparser]).parse_args()
+# except ImportError:
+# 	flags = None
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 CLIENT_SECRET = 'private/client_secret.json'
@@ -18,8 +18,8 @@ store = file.Storage('private/storage.json')
 creds = store.get()
 if not creds or creds.invalid:
 	flow = client.flow_from_clientsecrets(CLIENT_SECRET, SCOPES)
-	creds = tools.run(flow, store)#  \
-		#if flags else tools.run(flow, store)
+	creds = tools.run_flow(flow, store)  #\
+		#if flags else tools.run_flow(flow, store)
 
 CAL = build('calendar','v3', http = creds.authorize(Http()))
 GMT_OFF = pytz.utc
@@ -119,6 +119,6 @@ if __name__ == '__main__':
 	tomorrow_date = TODAY+datetime.timedelta(days = 1)
 	day_after = tomorrow_date+datetime.timedelta(days = 1)
 	eventz = getQuery("KN", calendarId = "aljaz.medic@gmail.com", timeTuple = (TODAY, None))
-	updateEventsTags(eventz, "#KN", match_regex=NO_TAGS)
+	updateEventsTags(eventz, "#KN")
 
-	print(getQuery("KN", calendarId = "aljaz.medic@gmail.com", timeTuple = (TODAY, None))["items"])
+	getQuery("KN", calendarId = "aljaz.medic@gmail.com", timeTuple = (TODAY, None))["items"]
