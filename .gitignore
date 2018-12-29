@@ -33,9 +33,11 @@ MANIFEST
 
 #programs temp folder
 temp/*
+calendar/private/*
 
 #keep only the folder
 !temp/.gitkeep
+!calendar/private/.gitkeep
 
 # Installer logs
 pip-log.txt

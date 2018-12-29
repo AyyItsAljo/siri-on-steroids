@@ -3,8 +3,7 @@ from apiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
 import datetime, pytz
-import pprint, json, re
-pprint = pprint.PrettyPrinter(indent = 4).pprint
+import re
 
 # try:
 # 	import argparse
@@ -64,6 +63,7 @@ def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, 
 	start_time, end_time = [dtToGCString(t) for t in timeTuple]#datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
 
 	print('Getting %s upcoming %s events'%("the" if not maxResults else str(maxResults), query))
+
 	events_result = CAL.events().list(calendarId = calendarId, timeMin = start_time, timeMax = end_time, 
 										q = query, singleEvents = True, maxResults = maxResults,
 										orderBy = 'startTime').execute()
@@ -71,7 +71,8 @@ def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, 
 	events = events_result.get('items', [])
 	if not events:
 		print('No upcoming events found.')
-
+	else:
+		print('Found %i event/s'%len(events))
 	for event in events:
 		start = event['start'].get('dateTime', event['start'].get('date'))
 		print(start, event['summary'])
@@ -79,11 +80,61 @@ def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, 
 	events_result["calendarId"] = calendarId
 	return events_result
 
+def getTags(event):
+	summary = event.get("description", "")
+	TAGS = re.compile('(?:(?<=^)#.*$)', re.M)
+	return TAGS.findall(summary)
+
+def filterEvents(events, **kwargs):
+	print(kwargs)
+	filters = {}
+	if "filter_dict" in kwargs:
+		filters = kwargs["filter_dict"]
+	else:
+		filters = kwargs
+
+	"""
+	filters = {
+		"summary":None,
+		"summary_r":None,
+		"description":None,
+		"description_r":None
+		"tags":[""],
+		"no_tags":[""]
+	}
+	"""
+	def filterFunction(x):
+		for field, fil in filters.items():
+			#No entry at field
+			if fil == None:
+				continue
+
+			if field == "tags":
+				tags_in_event = getTags(x)
+				for tag in fil:
+					if tag not in tags_in_event:
+						return False
+			elif field == "no_tags":
+				tags_in_event = getTags(x)
+				for tag in fil:
+					if tag in tags_in_event:
+						return False
+			elif field[-2:] == '_r':
+				#fil is a re.compile
+				if not re.match(fil, x[field[:-2]]):
+					return False
+			else:
+				#fil is a str
+				if not x[field] == fil:
+					return False
+		return True
+
+	ret = events
+	ret["items"] = list(filter(filterFunction, events["items"]))
+	return ret
+
 
 def evaluateDescription(input_data):
-	HAS_TAG = re.compile('(?:#.*\n)+')
-	NO_TAGS = re.compile('(?!#[^\n]*\n).*')
-
 	TAG_RE = re.compile('(?:(#.+)\n)')
 	DESCRIPTION_RE = re.compile('(?:#[^\n.]*\n)+\n*(.*)$', re.DOTALL)
 
@@ -97,28 +148,43 @@ def evaluateDescription(input_data):
 	}
 
 
-def updateEventsTags(events, descriptionTags = [], match_regex = re.compile(".*")):
+def updateEventsTags(events, descriptionTags = [], filter_dict=None):
+	if filter_dict:
+		events = filterEvents(events, filter_dict)
+
 	events_list = events.get("items", [])
-	calendarId = events["calendarId"]
+	calendarId = events["calendarId"] 
+
 	if(type(descriptionTags) == list):
-		description_prefix = "\n".join(descriptionTags)
+		description_prefix = strip("\n".join(descriptionTags))
 	else:
 		description_prefix = descriptionTags
+
 	for event in events_list:
-		if not match_regex.match(event["description"]):
-			continue
 		BODY = {
-			"description":  "%s\n%s"%(description_prefix, event["description"])
+			"description":  strip("%s\n%s"%(description_prefix, event.get("description", "")))
 		}
 		e = CAL.events().patch(calendarId = calendarId, eventId = event["id"], body = BODY).execute()
-		print(e)
+		if not e:
+			raise Exception(e)
 
 if __name__ == '__main__':
+
+
+	import pprint, json
+	pprint = pprint.PrettyPrinter(indent = 4).pprint
 	#print(json.dumps(CAL.calendarList().list().execute(), indent = 3))
 	TODAY = datetime.date.today()
-	tomorrow_date = TODAY+datetime.timedelta(days = 1)
-	day_after = tomorrow_date+datetime.timedelta(days = 1)
-	eventz = getQuery("KN", calendarId = "aljaz.medic@gmail.com", timeTuple = (TODAY, None))
-	updateEventsTags(eventz, "#KN")
+	TOMORROW = TODAY+datetime.timedelta(days = 1)
+	with open("private/pers_data.json") as read_file:
+		my_mail = json.load(read_file)["mail"]
 
-	getQuery("KN", calendarId = "aljaz.medic@gmail.com", timeTuple = (TODAY, None))["items"]
+	eventz = getQuery("#bus", calendarId = my_mail, timeTuple = (TODAY, None))
+	#updateEventsTags(eventz, "#bus", {"no_tags":"#bus"})
+
+	for f_e in filterEvents(evs, {"summary_r":".*KN"})["items"]:
+		start = f_e['start'].get('dateTime', f_e['start'].get('date'))
+		pprint(start+" "+ f_e['summary']+" "+", ".join(getTags(f_e)))
+	"""
+	day_after = tomorrow_date+datetime.timedelta(days = 1)
+	getQuery("KN", calendarId = my_mail, timeTuple = (TODAY, None))["items"]"""
