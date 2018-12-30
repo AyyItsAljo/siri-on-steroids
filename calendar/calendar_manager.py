@@ -58,15 +58,22 @@ def dtToGCString(datetimeObject):
 	elif(type(datetimeObject) == None):
 		return None
 
+def getTags(event):
+	description = event.get("description", "")
+	TAGS = re.compile('(?:(?<=^)#.*$)', re.M)
+	return TAGS.findall(description)
 
-def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, None)):
+def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, None),log=True):
 	start_time, end_time = [dtToGCString(t) for t in timeTuple]#datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-
-	print('Getting %s upcoming %s events'%("the" if not maxResults else str(maxResults), query))
+	if log:
+		print('Getting %supcoming %s events'%("the " if not maxResults else str(maxResults), query))
 
 	events_result = CAL.events().list(calendarId = calendarId, timeMin = start_time, timeMax = end_time, 
 										q = query, singleEvents = True, maxResults = maxResults,
 										orderBy = 'startTime').execute()
+	events_result["calendarId"] = calendarId
+	if not log:
+		return events_result
 
 	events = events_result.get('items', [])
 	if not events:
@@ -75,25 +82,18 @@ def getQuery(query, calendarId = 'primary',maxResults = None,timeTuple = (None, 
 		print('Found %i event/s'%len(events))
 	for event in events:
 		start = event['start'].get('dateTime', event['start'].get('date'))
-		print(start, event['summary'])
-
-	events_result["calendarId"] = calendarId
+		print(start+" "+ event['summary']+" Tags:'%s'"%(", ".join(getTags(event))))
+	print()
 	return events_result
 
-def getTags(event):
-	summary = event.get("description", "")
-	TAGS = re.compile('(?:(?<=^)#.*$)', re.M)
-	return TAGS.findall(summary)
-
 def filterEvents(events, **kwargs):
-	print(kwargs)
 	filters = {}
 	if "filter_dict" in kwargs:
 		filters = kwargs["filter_dict"]
 	else:
 		filters = kwargs
 
-	"""
+	""" filter looks like:
 	filters = {
 		"summary":None,
 		"summary_r":None,
@@ -133,20 +133,58 @@ def filterEvents(events, **kwargs):
 	ret["items"] = list(filter(filterFunction, events["items"]))
 	return ret
 
+def pprintEvent(event):
+	if("date" in event["start"]):
+		parse_pattern = "%Y-%m-%d"
+		event_start = event['start']['date']
+		event_end  =  event['end']['date']
+	else:
+		parse_pattern = "%Y-%m-%dT%H:%M:%S%z"
+		event_start = event['start']['dateTime'][:22] + event['start']['dateTime'][23:]
+		event_end  =  event['end']['dateTime'][:22] + event['end']['dateTime'][23:]
+	#YYYY-mm-ddTHH:MM:SS+01:00 #get rid of last :
 
-def evaluateDescription(input_data):
+	event_start = datetime.datetime.strptime(event_start, parse_pattern)
+	event_end  =  datetime.datetime.strptime(event_end, parse_pattern)
+	difference = event_end - event_start
+	location = " @ %s"%event["location"] if "location" in event else ""
+	display_pattern = "%d.%m.%Y %H:%M:%S"
+	if "description" in event:
+		tags, description = list(evaluateDescriptionEvent(event).values())
+		if description:
+			description = "'%s'"%(description.replace("\n", "\t").replace("\r", ""))
+			description = "\n"+re.sub(r'(?<!\n)\n(?!\n)|\n{3,}', '\n', description)
+			description = re.sub(r'(?<!\s)\s(?!\s)|\s{3,}', ' ', description)
+		else:
+			description = ""
+		if tags:
+			tags = "\ntags:%s"%", ".join([x[1:] for x in tags])
+		else:
+			tags = ""
+	else:
+		tags = ""
+		description = ""
+	print("%s - %s (%s):\n%s%s%s%s\n"%(datetime.datetime.strftime(event_start, display_pattern),
+						datetime.datetime.strftime(event_end, display_pattern),
+						str(difference),
+						event["summary"], location, description, tags))
+	#TODO add parser and formater
+
+def evaluateDescriptionEvent(event):
+	input_data = event["description"]
 	TAG_RE = re.compile('(?:(#.+)\n)')
 	DESCRIPTION_RE = re.compile('(?:#[^\n.]*\n)+\n*(.*)$', re.DOTALL)
 
-	if HAS_TAG.match(input_data):
-		tags = TAG_RE.findall(input_data)
-		description = DESCRIPTION_RE.findall(input_data)
-
+	tags = getTags(event)
+	description = DESCRIPTION_RE.findall(input_data)
+	if not description:
+		description = ""
+	else:
+		description = description[0]
 	return {
 		"tags":tags,
 		"description":description
 	}
-
 
 def updateEventsTags(events, descriptionTags = [], filter_dict=None):
 	if filter_dict:
@@ -172,19 +210,16 @@ if __name__ == '__main__':
 
 
 	import pprint, json
-	pprint = pprint.PrettyPrinter(indent = 4).pprint
+	pprint = pprint.PrettyPrinter(indent = 4)
 	#print(json.dumps(CAL.calendarList().list().execute(), indent = 3))
 	TODAY = datetime.date.today()
-	TOMORROW = TODAY+datetime.timedelta(days = 1)
+	AFTER = TODAY+datetime.timedelta(days = 10)
 	with open("private/pers_data.json") as read_file:
 		my_mail = json.load(read_file)["mail"]
 
-	eventz = getQuery("#bus", calendarId = my_mail, timeTuple = (TODAY, None))
-	#updateEventsTags(eventz, "#bus", {"no_tags":"#bus"})
+	eventz = getQuery("", calendarId = my_mail, timeTuple = (TODAY, AFTER), log=False)
+	pprintEvent(eventz["items"][3])
 
-	for f_e in filterEvents(evs, {"summary_r":".*KN"})["items"]:
-		start = f_e['start'].get('dateTime', f_e['start'].get('date'))
-		pprint(start+" "+ f_e['summary']+" "+", ".join(getTags(f_e)))
 	"""
 	day_after = tomorrow_date+datetime.timedelta(days = 1)
 	getQuery("KN", calendarId = my_mail, timeTuple = (TODAY, None))["items"]"""
